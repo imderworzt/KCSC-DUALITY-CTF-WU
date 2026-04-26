@@ -94,7 +94,7 @@ Và như một thói quen, mình đặt breakpoint vào những chỗ có dạng
 
 Giờ chỉ cần xem hàm mã hóa đó là gì, và thứ tự mã hóa là gì.
 
-Sau 1 hồi debug mà không được, vì luật không cấm nên mình ném thử lên mcp (nỗi đau đớn cuối cùng) thì có thứ tự như sau:
+Sau 1 hồi debug mà không được, vì luật không cấm nên mình ném thử lên mcp (nỗ lực cuối cùng) thì có thứ tự như sau:
 
 Input 8 kí tự, đi qua một vòng mã hóa sau đây:
 
