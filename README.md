@@ -20,44 +20,65 @@ lea Buf2 để so sánh với input sau xử lý: Buf1
 
 Phần code được làm rối rất dài, dùng để xào nấu input
 
-Mình thấy có gọi hàm loc_7FF7AC4B1070 sau khi nhập input, nên mình đặt breakpoint đây và dòng phía dưới
+Để làm bài này, chỉ có thể là brute ra flag thôi
 
-<img width="350" height="32" alt="ida_aFqRkvUIK7" src="https://github.com/user-attachments/assets/d24f764e-e4dc-4e4c-a150-0cc85faf0ee9" />
-
-Mình debug chương trình, không nhập input mà nhấn Enter. Sau khi đến breakpoint thứ nhất thì mình F9 để đến breakpoint thứ 2 (dòng phía dưới)
-
-Khi này RAX trỏ đến:
+Script brute-force:
 
 ```
-RAX 00007FF7AC4B5668 .data → 415530D13F1CAED0
+import os
+import tempfile
+import subprocess
+
+EXE = r"D:\ctf\last_dance_da_0_solve\brainrot.exe"
+TMP_EXE = os.path.join(tempfile.gettempdir(), "brainrot_brutepatch.exe")
+
+ # từ IDA: main+0x9A => mov r8d, 20h (độ dài memcmp), file offset imm32 = 0x87C
+IMM_OFF = 0x87C
+FLAG_LEN = 32
+
+CHARSET = (
+    "abcdefghijklmnopqrstuvwxyz"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "0123456789"
+    "{}_-!@#$%^&*().?:;"
+)
+
+def run_check(exe_path: str, s: str) -> str:
+    p = subprocess.run(
+        [exe_path],
+        input=(s + "\n").encode(),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        check=False,
+    )
+    return p.stdout.decode(errors="ignore")
+
+with open(EXE, "rb") as f:
+    original = f.read()
+
+known = ""
+for i in range(FLAG_LEN):
+    patched = bytearray(original)
+    patched[IMM_OFF:IMM_OFF + 4] = (i + 1).to_bytes(4, "little")  # memcmp len = i+1
+    with open(TMP_EXE, "wb") as f:
+        f.write(patched)
+
+    found = False
+    for ch in CHARSET:
+        candidate = known + ch + ("A" * (FLAG_LEN - i - 1))
+        out = run_check(TMP_EXE, candidate)
+        if "Correct!" in out:
+            known += ch
+            print(f"[+] pos {i+1:02d}: {ch} -> {known}")
+            found = True
+            break
+
+    if not found:
+        raise RuntimeError(f"Không tìm được ký tự tại vị trí {i+1}, current={known}")
+
+print("[=] candidate:", known)
+print(run_check(EXE, known))
 ```
-
-Mình đến địa chỉ 00007FF7AC4B5668 và copy 32 bytes lưu tạm, xem có cần dùng đến không (vì hàm so sánh là so sánh 32 bytes của input sau khi nấu với Buf2 nên mình chú ý tới con số này)
-
-32 bytes đấy: `d0ae5793264f55418d5ed315d4730e42dbf91ee73071b1650f344f4434aa1b90`
-
-Tiếp theo, mình debug lại nhưng thay vì bấm F9 khi đang ở bp đầu, mình F7  để vào loc và F8 nhiều lần và đến được lệnh sau: (input 32 kí tự ngẫu nhiên thay vì để trống)
-
-`.4__:00007FF7AC5377A4 xor     bl, [rcx+18CDEBBBh]`
-
-Mình set IP đến lệnh này và thấy input của mình ở RBX -> nó lấy input của mình xor với stream key
-
--> Để lấy flag, chỉ cần xor lại chuỗi Buf2 với 32 bytes lúc nãy. Cũng vì để trống, 32 bytes này xor với 0 và vẫn là chính nó
-
-32 bytes ở Buf 2 có thể được viết lại là: `9bed04d05d233820e201b774b206651db5966986492ed3177a5c102959c824ed`
-
-Mình viết script xor 2 chuỗi:
-
-```
-a = bytes.fromhex("9bed04d05d233820e201b774b206651db5966986492ed3177a5c102959c824ed")
-b = bytes.fromhex("d0ae5793264f55418d5ed315d4730e42dbf91ee73071b1650f344f4434aa1b90")
-
-x = bytes(i ^ j for i, j in zip(a, b))
-print("hex :", x.hex())
-print("text:", x.decode("ascii"))
-```
-
-Output cũng như là flag: KCSC{lmao_dafuk_noway_bruh_mmb?} (không được brainrot lắm nhỉ?)
 
 ## medium antidebug revenge
 
