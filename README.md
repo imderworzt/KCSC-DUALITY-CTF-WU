@@ -247,15 +247,13 @@ void *load_and_decrypt_resource(size_t *out_len)
 
 (LPCSTR)0x0A -> RT_RCDATA
 
-Trước tiên, ta sử dụng Process Hacker để dump RT_RCDATA ra
+Trước tiên, ta sử dụng Process Hacker để dump RT_RCDATA ra 1 file .bin
 
 <img width="1681" height="991" alt="GZpHUFP6vi" src="https://github.com/user-attachments/assets/87571b36-03b4-4643-bef4-ff6b94301e52" />
 
-Copy toàn bộ dữ liệu này, đưa lên cyberchef, decrypt base64 và tải xuống dưới dạng file enc
+Sau đó decrypt base64 dữ liệu trong đó
 
-<img width="1920" height="997" alt="brave_dUA3WApug1" src="https://github.com/user-attachments/assets/6bba540f-37cf-4dad-a2da-aaa4fbb4ec2b" />
-
-Rôi sau đó sử dụng script bruteforce sau, target output sẽ là một file PE file với:
+Cuối cùng sử dụng script bruteforce sau, target output sẽ là một file PE file với:
 
 ```
 - offset 0x00: MZ
