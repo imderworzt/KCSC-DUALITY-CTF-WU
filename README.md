@@ -82,6 +82,93 @@ print(run_check(EXE, known))
 
 FLAG: KCSC{lmao_dafuk_noway_bruh_mmb?}
 
+## medium-antidebug-revenge
+
+### Bài này vì mình không debug được nên sẽ lấy 1 phần kha khá thông tin thu được từ MCP
+
+Đầu tiên, kiểm tra string thì ta thấy có 2 điều phải quan tâm: "Enter password:" và "Correct/Wront"
+
+<img width="711" height="80" alt="ida_WOPM8XXEkn" src="https://github.com/user-attachments/assets/b080a265-d631-4a7d-9284-86536e7bfe01" />
+
+Kiểm tra nơi string Enter password được Xref đến ta thấy:
+
+<img width="735" height="237" alt="ida_wdM0zQcePK" src="https://github.com/user-attachments/assets/c92534d2-b73b-406e-bbc3-1d3bcbf0bd5a" />
+
+Hàm này khá giống với bài Harder medium antidebug được làm hồi training, sau khi kiểm tra qua 3-4 hàm bên dưới có được kết luận nhỏ như sau:
+
+```
+Chương trình đọc input (8 kí tự)
+Đưa qua các bước xử lý
+So sánh với Buf 2
+```
+
+Hàm so sánh này nằm ở:
+
+```
+int sub_7FF7FF14CBC0()
+{
+  int result; // eax
+
+  if ( dword_7FF7FF1583B8 )
+    qword_7FF7FF155710(&Buf1_, &qword_7FF7FF155078, &Buf1_);
+  result = memcmp(&Buf1_, &Buf2_, 8u);
+  dword_7FF7FF1556F4 = result == 0;
+  return result;
+}
+```
+Buf2: `5F 08 6B 01 0C FD DD 6F`
+
+Thấy qword_0x8388 có dạng:
+
+<img width="754" height="51" alt="ida_XU2aF8uDVN" src="https://github.com/user-attachments/assets/8e7b7573-5926-47ac-be17-390a9788922e" />
+
+Khá nghi đây sẽ là 1 hàm mà sau khi phân luồng chương trình, sẽ là hàm chạy vào xử lý Buf 1
+
+Ngoài ra ở phần code ta thấy chương trình gọi vào cryptbase.dll
+
+<img width="1367" height="705" alt="ida_Sxr1IK9tct" src="https://github.com/user-attachments/assets/0b4ef2ec-104b-4cb1-9589-20e716fc6d8d" />
+
+Vậy ở dưới cũng sẽ gọi các hàm có trong cryptbase.dll như SystemFunction002,...
+
+Buf1 Xref đến hàm này:
+
+```
+.text:00007FF7FF14C580 sub_7FF7FF14C580 proc near              ; DATA XREF: .rdata:00007FF7FF14F418↓o
+.text:00007FF7FF14C580                 lea     rax, Buf1_
+.text:00007FF7FF14C587                 mov     cs:n8, 8
+.text:00007FF7FF14C591                 mov     cs:Buf1, rax
+.text:00007FF7FF14C598                 lea     rax, qword_7FF7FF155078
+.text:00007FF7FF14C59F                 mov     cs:qword_7FF7FF155728, rax
+.text:00007FF7FF14C5A6                 mov     cs:n8_0, 8
+.text:00007FF7FF14C5B0                 mov     cs:n8_1, 8
+.text:00007FF7FF14C5BA                 mov     cs:n8_2, 8
+.text:00007FF7FF14C5C4                 retn
+.text:00007FF7FF14C5C4 sub_7FF7FF14C580 endp
+```
+
+Có vẻ nó đả động gì đến qword_7FF7FF155078, khả năng rất lớn là key
+
+Lấy qword_7FF7FF155078: `31 C0 40 41 42 43 44 C3`
+
+Đến lúc này, vì quá bí nên mình hỏi AI về chức năng của các hàm đằng sau hàm gọi cryptbase thì có được danh sách như sau:
+
+```
+0xC6C0: RC4
+0xC6E0: DES
+0xC700: 1 hàm mã hóa custom
+Đây là 2 hàm duy nhất đả động vào việc mã hóa đầu vào
+```
+
+Tiếp theo dùng AI để trace xem thứ tự mã hóa là gì và thu được:
+
+`RC4 -> DES -> RC4 -> custom -> DES x3 -> RC4 -> custom`
+
+Đưa key và target nhờ AI solve ra được password là congrats
+
+<img width="972" height="78" alt="cmd_ezIykFduG5" src="https://github.com/user-attachments/assets/2d16ee1f-3064-4f6b-a844-315bacdec808" />
+
+FLAG: KCSC{congrats}
+
 ## NoHarmAtAll
 
 ### Bài này sử dụng 1 kĩ thuật tên là `Process Ghosting` thông qua bài viết trên [hackercoolmagazine.com](https://hackercoolmagazine.com/process-ghosting-explained/), ta có các bước của kỹ thuật này như sau:
