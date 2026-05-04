@@ -80,6 +80,8 @@ print("[=] candidate:", known)
 print(run_check(EXE, known))
 ```
 
+FLAG: KCSC{lmao_dafuk_noway_bruh_mmb?}
+
 ## NoHarmAtAll
 
 ### Bài này sử dụng 1 kĩ thuật tên là `Process Ghosting` thông qua bài viết trên [hackercoolmagazine.com](https://hackercoolmagazine.com/process-ghosting-explained/), ta có các bước của kỹ thuật này như sau:
@@ -955,3 +957,80 @@ Output:
 <img width="973" height="65" alt="cmd_wGMhPQ2H6r" src="https://github.com/user-attachments/assets/06fc3f72-62dd-4e9d-9685-45712c7f8763" />
 
 KCSC{w3lc0m3_y0u_t0_th1s_k3rn3l_l4nd_cha11eng3.I_h0p3_th3_fl49_15_n07_t00_l0ng_s0_that_y0u_can_bru7e-forc3_it.L00k_back_and_s33_1f_y0u_learnt_proc3ss_gh0s71n9_and_dr1v3r_r3v3rsing.C0ngratulati0ns_and_w1sh_y0u_a11_th3_b3st!!!}
+
+
+## MISC/GOODBYE
+
+Ban đầu bài này là 1 file pcap, mở bằng wrieshark lên và thấy toàn bộ là echo request những không được trả lời
+
+<img width="1528" height="862" alt="Wireshark_6wdAzMbjgV" src="https://github.com/user-attachments/assets/492bf00b-9085-4579-8903-f267d040a8e0" />
+
+Copy giá trị phần Data của packet 1, sau đó decode base64 như hình (cũng vì packet cuối có 2 dấu == nên cũng khá nghi đây là base64), ta có header của 1 file RAR
+
+<img width="1529" height="978" alt="uTHWxt79pF" src="https://github.com/user-attachments/assets/3cb564cf-6c06-47a4-95cb-9e715e9758d6" />
+
+Lúc này, dump toàn bộ dữ liệu rồi ném lên cyberchef để decode tương tự .Lưu file .RAR này lại và khi giải nén file đòi password
+
+<img width="561" height="360" alt="explorer_e7bt0vqe3y" src="https://github.com/user-attachments/assets/5d3b99f7-cc8c-4dc8-9b93-e37635182b12" />
+
+Lúc này ta có thể bruteforce password như sau:
+
+Sử dụng [Rar2John](https://hashes.com/en/johntheripper/rar2john) để lấy hash 
+
+<img width="1232" height="685" alt="brave_GluDOMhapz" src="https://github.com/user-attachments/assets/0b0d9829-9f95-4d4c-87e9-2dccebcfbf4e" />
+
+Lưu hash này vào 1 file .txt rồi sử dụng tool [rockyou](https://weakpass.com/wordlists/rockyou.txt#download) để tìm ra password
+
+<img width="1067" height="572" alt="cmd_OEaK5m5nEH" src="https://github.com/user-attachments/assets/5d7ed9b8-998a-4bed-bacf-77d81f06dcd9" />
+
+Dùng mật khẩu này để giải nén file, ta thu được 1 file ảnh
+
+<img width="1005" height="718" alt="ImageGlass_WV4YNv7pmz" src="https://github.com/user-attachments/assets/e8440764-5b9b-48b3-beeb-88afa0abb828" />
+
+Kiểm tra phần Details trong Properties ta thấy:
+
+<img width="405" height="509" alt="explorer_P6KrVWCf0D" src="https://github.com/user-attachments/assets/13b30e7a-c84e-4164-be70-fdeffd6549b0" />
+
+30 MiB cho một file ảnh 661x512 là rất vô lý, vậy chắc hẳn bên trong vẫn phải còn thử gì đó
+
+Sử dụng zsteg lên bức ảnh ta thu được header của file .WAV
+
+<img width="1086" height="604" alt="cmd_WIKkq6gcvg" src="https://github.com/user-attachments/assets/7beeea1c-1a4d-4222-96a4-4eaa3626d222" />
+
+Giờ dùng lệnh sau để trích xuất lấy phần nhạc trong file ảnh:
+
+`python3 -c "d=open('IMG.png','rb').read(); open('flag_sound.wav','wb').write(d[d.index(b'RIFF'):])"`
+
+Thu được file nhạc, 1 file .wav 16 bits rất bình thường. Sử dụng Deepsound để xem có gì ẩn bên trong file nhạc này không
+
+<img width="800" height="600" alt="DeepSound_0HA3TpULsa" src="https://github.com/user-attachments/assets/a648532a-c977-430a-b285-97d31604e162" />
+
+File đòi password. Nhìn lại file ảnh thì có một mũi tên chú thích password chỉ vào từ GOODBYE, ta thử dụng password là `GOODBYE`
+
+<img width="800" height="600" alt="DeepSound_aDluwh7URI" src="https://github.com/user-attachments/assets/14a68932-9a7e-4c8f-b613-626dad27a6ac" />
+
+Kết quả là có 1 file .txt bên trong, nội dung file này như sau:
+
+```
+Dear E-Commerce professional ; This letter was specially 
+selected to be sent to you . If you are not interested 
+in our publications and wish to be removed from our 
+lists, simply do NOT respond and ignore this mail ! 
+This mail is being sent in compliance with Senate bill 
+1627 , Title 2 ; Section 306 . This is different than 
+anything else you've seen ! Why work for somebody else 
+when you can become rich in 51 WEEKS . Have you ever 
+...
+```
+
+Đây chỉ là phần đầu và đằng sau còn khoảng vài chục ngàn kí tự nữa. Hỏi AI thì được biết đây là [Spammimic](https://spammimic.com/), ta [decode](https://spammimic.com/decode.shtml) nó và thu được:
+
+```
+1. Nf3 Nc6 2. g4 Nb8 3. e4 Na6 4. a3 b5 5. c3 h5 6. Nh4 d6 7. d3 Nb8 8. Ng2 Bxg4 9. Qa4 Na6 10. h4 c6 11. Bh6 e6 12. Bxg7 Kd7 13. Qd1 Bxd1 14. Bf6 Bf3 15. Bg5 Qe7 16. Be2 Kd8 17. Bh6 e5 18. Ra2 Kd7 19. Rf1 c5 20. Bxf3 Kc8 21. Ne3 Qf6 22. Bg7 Nb4 23. Bd1 Kb7 24. Nd2 Rh6 25. Ke2 Qg6 26. c4 Qg2 27. axb4 Rh7 28. cxb5 f6 29. Ra4 Rxg7 30. Nd5 Rd8 31. Nf3 Qg5 32. Ne1 Re7 33. Bb3 Rb8 34. Nc7 Qc1 35. Na6 Qh6 36. Rg1 Rd8 37. Bc4 Qg6 38. Ra5 Kb6 39. bxc5+ dxc5 40. Nf3 Qf5 41. Ra4 Ra8 42. exf5 e4 43. Nh2 Nh6 44. Rb1 Rd8 45. Rh1 Rd6 46. Ke3 Ree6 47. Bb3 Kb7 48. Ke2 Rc6 49. Rg1 Re7 50. Rd1 Ka8 51. Ba2 Rcc7 52. Rxe4 Rxe4+ 53. Kf1 Rg7 54. dxe4 Rg4 55. Re1 Rf4 56. Ra1 Rxe4 57. Be6 Rd4 58. Kg2 Rf4 59. Bc4 Rf3 60. Ra2 Rxf2+ 61. Kh1 Rc2 62. Ra1 Rxh2+ 63. Kg1 Bg7 64. Rc1 Rg2+ 65. Kxg2 Kb7 66. Kf1 Ng8 67. Ke1 Kc8 68. Rb1 Bh6 69. Bxg8 Bc1 70. Kd1 Bg5 71. Nxc5 Bxh4 72. Bb3 { Black resigns. } 1-0
+```
+
+Decode [Chess Stegnography](https://incoherency.co.uk/chess-steg/) ta thu về
+
+<img width="1920" height="997" alt="brave_qqrkBzzECp" src="https://github.com/user-attachments/assets/285125a5-317e-4431-85b9-8de5269082cd" />
+
+FLAG: FLAG{Y0U_D1D_17_MY_FR13ND_TH3_END_0F_7R41N1NG_BU7_JU57_7H3_B3G1NN1NG_OF_GR347N355}
